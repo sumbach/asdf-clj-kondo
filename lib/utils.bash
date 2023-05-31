@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# TODO: Ensure this is the correct GitHub homepage where releases can be downloaded for clj-kondo.
 GH_REPO="https://github.com/clj-kondo/clj-kondo"
 TOOL_NAME="clj-kondo"
 TOOL_TEST="clj-kondo --version"
@@ -31,9 +30,40 @@ list_github_tags() {
 }
 
 list_all_versions() {
-	# TODO: Adapt this. By default we simply list the tag names from GitHub releases.
-	# Change this function if clj-kondo has other means of determining installable versions.
 	list_github_tags
+}
+
+binary_platform_and_arch() {
+	local platform=
+	local static_suffix=
+	local arch=
+
+	case "$(uname -s)" in
+	Linux*)
+		platform=linux
+		;;
+	Darwin*)
+		platform=macos
+		;;
+	esac
+
+	case "$(uname -m)" in
+	aarch64)
+		arch=aarch64
+		;;
+	arm64)
+		arch="aarch64"
+		;;
+	*)
+		arch=amd64
+		# always use static image on linux
+		if [[ "$platform" == "linux" ]]; then
+			static_suffix="-static"
+		fi
+		;;
+	esac
+
+	echo "$platform$static_suffix-$arch"
 }
 
 download_release() {
@@ -41,8 +71,8 @@ download_release() {
 	version="$1"
 	filename="$2"
 
-	# TODO: Adapt the release URL convention for clj-kondo
-	url="$GH_REPO/archive/v${version}.tar.gz"
+	# adapted from https://github.com/clj-kondo/clj-kondo/blob/e282b853bd1af45179bf/script/install-clj-kondo#L61-L83
+	url="$GH_REPO/releases/download/v${version}/clj-kondo-${version}-$(binary_platform_and_arch).zip"
 
 	echo "* Downloading $TOOL_NAME release $version..."
 	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
@@ -61,7 +91,6 @@ install_version() {
 		mkdir -p "$install_path"
 		cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
 
-		# TODO: Assert clj-kondo executable exists.
 		local tool_cmd
 		tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
 		test -x "$install_path/$tool_cmd" || fail "Expected $install_path/$tool_cmd to be executable."
