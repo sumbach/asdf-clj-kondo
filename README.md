@@ -26,8 +26,6 @@
 Plugin:
 
 ```shell
-asdf plugin add clj-kondo
-# or
 asdf plugin add clj-kondo https://github.com/sumbach/asdf-clj-kondo.git
 ```
 
